@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ragwalla Agent Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #007AFF;
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 122, 255, 0.2);
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 122, 255, 0.3);
+        }
+
+        .sessions-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .session-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .session-item:hover {
+            background: #f7f7f7;
+        }
+
+        .session-item.active {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 3px solid #667eea;
+            padding-left: 9px;
+        }
+
+        .session-preview {
+            font-size: 13px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .session-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        /* Main Chat Area */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .agent-select {
+            padding: 8px 12px;
+            border: 1px solid #d0d0d0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .agent-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .agent-select:hover {
+            border-color: #667eea;
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .connection-status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;  /* Default to red (disconnected) */
+        }
+
+        .connection-status.connected::before {
+            background: #10b981;  /* Green when connected */
+        }
+
+        .connection-status.disconnected::before {
+            background: #ef4444;  /* Red when disconnected */
+        }
+
+        .connection-status.connecting::before {
+            background: #f59e0b;  /* Orange when connecting */
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Messages */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 122, 255, 0.2);
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            border: 1px solid #e5e5ea;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .typing-indicator {
+            padding: 10px 14px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #007AFF;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* Input */
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #d0d0d0;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            resize: none;
+        }
+
+        .message-input:focus {
+            border-color: #007AFF;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        }
+
+        .send-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 122, 255, 0.2);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 122, 255, 0.3);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Welcome Screen */
+        .welcome {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea08 0%, #764ba208 100%);
+        }
+
+        .welcome h2 {
+            margin-bottom: 16px;
+            color: #2d3748;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .welcome p {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 16px;
+        }
+        
+        .welcome-emoji {
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="app-title">Ragwalla Agent Studio</div>
+            <button class="new-chat-btn" id="newChatBtn" onclick="createNewSession()" style="display: none;">+ New Chat</button>
+        </div>
+        <div class="sessions-list" id="sessionsList" style="display: none;"></div>
+        <div class="no-agent-message" id="noAgentMessage" style="padding: 20px; text-align: center; color: #666; font-size: 14px;">
+            <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">📋</div>
+            <div>Select an agent to view chats</div>
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="main">
+        <div class="chat-header">
+            <select class="agent-select" id="agentSelect" onchange="selectAgent(this.value)">
+                <option value="">Select an agent...</option>
+            </select>
+            <div class="connection-status disconnected" id="connectionStatus">Disconnected</div>
+        </div>
+
+        <div id="chatArea" style="display: none; flex: 1; flex-direction: column;">
+            <div class="messages" id="messages"></div>
+            <div class="input-area">
+                <div class="input-container">
+                    <textarea class="message-input" 
+                             id="messageInput" 
+                             placeholder="Type a message..." 
+                             rows="1"
+                             onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="welcome" id="welcome">
+            <div class="welcome-emoji">🤖</div>
+            <h2>Welcome to Ragwalla Agent Studio</h2>
+            <p>Select an agent above to start chatting</p>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentSessionId = null;
+        let selectedAgentId = null;
+
+        // Load agents on startup
+        async function loadAgents() {
+            try {
+                const response = await fetch('/agents');
+                const data = await response.json();
+                
+                if (data.success && data.data.agents) {
+                    const select = document.getElementById('agentSelect');
+                    select.innerHTML = '<option value="">Select an agent...</option>';
+                    
+                    data.data.agents.forEach(agent => {
+                        const option = document.createElement('option');
+                        option.value = agent.id;
+                        option.textContent = agent.name || agent.id;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading agents:', error);
+            }
+        }
+
+        // Load sessions
+        async function loadSessions() {
+            try {
+                const response = await fetch('/sessions');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const list = document.getElementById('sessionsList');
+                    list.innerHTML = '';
+                    
+                    // Filter sessions by selected agent
+                    const filteredSessions = selectedAgentId 
+                        ? data.data.sessions.filter(session => session.agent_id === selectedAgentId)
+                        : data.data.sessions;
+                    
+                    if (filteredSessions.length === 0) {
+                        list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">No chats yet</div>';
+                        return null; // Return null to indicate no sessions
+                    } else {
+                        filteredSessions.forEach(session => {
+                            const div = document.createElement('div');
+                            div.className = 'session-item';
+                            div.onclick = () => loadSession(session.id);
+                            
+                            const preview = document.createElement('div');
+                            preview.className = 'session-preview';
+                            preview.textContent = session.preview || 'New chat';
+                            
+                            const time = document.createElement('div');
+                            time.className = 'session-time';
+                            time.textContent = new Date(session.updated_at).toLocaleString();
+                            
+                            div.appendChild(preview);
+                            div.appendChild(time);
+                            list.appendChild(div);
+                            
+                            if (session.id === currentSessionId) {
+                                div.classList.add('active');
+                            }
+                        });
+                        return filteredSessions[0]; // Return the most recent session
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                return null;
+            }
+        }
+
+        // Select agent
+        async function selectAgent(agentId) {
+            if (!agentId) {
+                // No agent selected - hide sessions
+                document.getElementById('sessionsList').style.display = 'none';
+                document.getElementById('newChatBtn').style.display = 'none';
+                document.getElementById('noAgentMessage').style.display = 'block';
+                document.getElementById('welcome').style.display = 'flex';
+                document.getElementById('chatArea').style.display = 'none';
+                currentSessionId = null;
+                if (ws) ws.close();
+                return;
+            }
+            
+            // Agent changed - reset session
+            if (selectedAgentId !== agentId) {
+                currentSessionId = null;
+                if (ws) ws.close();
+            }
+            
+            selectedAgentId = agentId;
+            
+            // Show sessions list and new chat button
+            document.getElementById('sessionsList').style.display = 'block';
+            document.getElementById('newChatBtn').style.display = 'block';
+            document.getElementById('noAgentMessage').style.display = 'none';
+            
+            // Load sessions for this agent
+            const mostRecentSession = await loadSessions();
+            
+            // If there's a recent session, load it, otherwise create a new one
+            if (mostRecentSession && !currentSessionId) {
+                loadSession(mostRecentSession.id);
+            } else if (!currentSessionId) {
+                createNewSession();
+            }
+        }
+
+        // Create new session
+        async function createNewSession() {
+            if (!selectedAgentId) {
+                alert('Please select an agent first');
+                return;
+            }
+
+            try {
+                const response = await fetch('/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agent_id: selectedAgentId })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    currentSessionId = data.data.session.id;
+                    connectWebSocket(currentSessionId);
+                    
+                    document.getElementById('welcome').style.display = 'none';
+                    const chatArea = document.getElementById('chatArea');
+                    chatArea.style.display = 'flex';
+                    chatArea.style.flexDirection = 'column';
+                    
+                    document.getElementById('messages').innerHTML = '';
+                    loadSessions();
+                }
+            } catch (error) {
+                console.error('Error creating session:', error);
+            }
+        }
+
+        // Load existing session
+        async function loadSession(sessionId) {
+            currentSessionId = sessionId;
+            
+            // Close existing WebSocket
+            if (ws) {
+                ws.close();
+            }
+            
+            // Show chat area
+            document.getElementById('welcome').style.display = 'none';
+            const chatArea = document.getElementById('chatArea');
+            chatArea.style.display = 'flex';
+            chatArea.style.flexDirection = 'column';
+            
+            // Clear messages (will be loaded via WebSocket)
+            document.getElementById('messages').innerHTML = '';
+            
+            // Connect WebSocket
+            connectWebSocket(sessionId);
+            
+            // Update active session
+            document.querySelectorAll('.session-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            // Note: event.target might not exist in all contexts
+            const clickedItem = document.querySelector(`[data-session-id="${sessionId}"]`);
+            if (clickedItem) {
+                clickedItem.classList.add('active');
+            }
+        }
+
+        // WebSocket connection
+        function connectWebSocket(sessionId) {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/${sessionId}`;
+            
+            updateConnectionStatus('connecting');
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                updateConnectionStatus('connected');
+                document.getElementById('sendBtn').disabled = false;
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onclose = () => {
+                updateConnectionStatus('disconnected');
+                document.getElementById('sendBtn').disabled = true;
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateConnectionStatus('disconnected');
+            };
+        }
+
+        // Update connection status
+        function updateConnectionStatus(status) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.className = 'connection-status';
+            
+            switch (status) {
+                case 'connected':
+                    statusEl.textContent = 'Connected';
+                    statusEl.classList.add('connected');
+                    break;
+                case 'connecting':
+                    statusEl.textContent = 'Connecting...';
+                    statusEl.classList.add('connecting');
+                    break;
+                case 'disconnected':
+                    statusEl.textContent = 'Disconnected';
+                    statusEl.classList.add('disconnected');
+                    break;
+            }
+        }
+
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            const messagesEl = document.getElementById('messages');
+            
+            switch (data.type) {
+                case 'history':
+                    // Load message history
+                    messagesEl.innerHTML = '';
+                    data.payload.messages.forEach(msg => {
+                        addMessage(msg.role, msg.content);
+                    });
+                    break;
+                    
+                case 'user_message':
+                    // Don't add again, we already added it
+                    break;
+                    
+                case 'ai_chunk':
+                    // Update or create AI message
+                    let aiMessage = document.getElementById(`msg-${data.payload.message_id}`);
+                    if (!aiMessage) {
+                        aiMessage = createMessage('assistant', '');
+                        aiMessage.id = `msg-${data.payload.message_id}`;
+                    }
+                    aiMessage.querySelector('.message-content').textContent += data.payload.chunk;
+                    scrollToBottom();
+                    break;
+                    
+                case 'ai_complete':
+                    // Remove typing indicator if exists
+                    const typing = document.getElementById('typing');
+                    if (typing) typing.remove();
+                    // Re-enable send button when AI completes
+                    document.getElementById('sendBtn').disabled = false;
+                    break;
+                    
+                case 'typing':
+                    if (data.payload.typing) {
+                        showTypingIndicator();
+                        // Disable send button while AI is typing
+                        document.getElementById('sendBtn').disabled = true;
+                    } else {
+                        hideTypingIndicator();
+                        // Re-enable send button when AI is done
+                        document.getElementById('sendBtn').disabled = false;
+                    }
+                    break;
+                    
+                case 'error':
+                    alert('Error: ' + data.payload.error);
+                    // Re-enable send button on error
+                    document.getElementById('sendBtn').disabled = false;
+                    break;
+            }
+        }
+
+        // Add message to chat
+        function addMessage(role, content) {
+            const message = createMessage(role, content);
+            document.getElementById('messages').appendChild(message);
+            scrollToBottom();
+        }
+
+        // Create message element
+        function createMessage(role, content) {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content;
+            
+            div.appendChild(contentDiv);
+            document.getElementById('messages').appendChild(div);
+            
+            return div;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            if (document.getElementById('typing')) return;
+            
+            const div = document.createElement('div');
+            div.id = 'typing';
+            div.className = 'message assistant';
+            div.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dots">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('messages').appendChild(div);
+            scrollToBottom();
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
+        }
+
+        // Send message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            
+            if (!content || !ws || ws.readyState !== WebSocket.OPEN) return;
+            
+            // Disable send button immediately
+            document.getElementById('sendBtn').disabled = true;
+            
+            // Add user message to UI
+            addMessage('user', content);
+            
+            // Send via WebSocket
+            ws.send(JSON.stringify({
+                type: 'user_message',
+                payload: { content }
+            }));
+            
+            // Clear input
+            input.value = '';
+            
+            // Update sessions list
+            setTimeout(loadSessions, 1000);
+        }
+
+        // Scroll to bottom
+        function scrollToBottom() {
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAgents();
+            // Don't load sessions until an agent is selected
+        });
+    </script>
+</body>
+</html>
