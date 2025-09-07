@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ragwalla Agent Studio</title>
+    <title>CityDesk Agent Studio</title>
     <style>
         * {
             margin: 0;
@@ -206,6 +206,99 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
+        /* Markdown styles */
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4,
+        .message-content h5,
+        .message-content h6 {
+            margin-top: 16px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .message-content h1 { font-size: 1.5em; }
+        .message-content h2 { font-size: 1.3em; }
+        .message-content h3 { font-size: 1.1em; }
+
+        .message-content p {
+            margin: 8px 0;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+
+        .message-content li {
+            margin: 4px 0;
+        }
+
+        .message-content code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .message.user .message-content code {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .message-content pre {
+            background: #f4f4f4;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 8px 0;
+        }
+
+        .message-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .message.user .message-content pre {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .message-content blockquote {
+            border-left: 3px solid #007AFF;
+            padding-left: 12px;
+            margin: 8px 0;
+            color: #666;
+        }
+
+        .message-content a {
+            color: #007AFF;
+            text-decoration: none;
+        }
+
+        .message-content a:hover {
+            text-decoration: underline;
+        }
+
+        .message-content table {
+            border-collapse: collapse;
+            margin: 8px 0;
+            width: 100%;
+        }
+
+        .message-content th,
+        .message-content td {
+            border: 1px solid #e0e0e0;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .message-content th {
+            background: #f4f4f4;
+            font-weight: 600;
+        }
+
         .typing-indicator {
             padding: 10px 14px;
             background: white;
@@ -321,12 +414,14 @@
             50% { transform: translateY(-10px); }
         }
     </style>
+    <!-- Include marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <div class="app-title">Ragwalla Agent Studio</div>
+            <div class="app-title">CityDesk Agent Studio</div>
             <button class="new-chat-btn" id="newChatBtn" onclick="createNewSession()" style="display: none;">+ New Chat</button>
         </div>
         <div class="sessions-list" id="sessionsList" style="display: none;"></div>
@@ -361,7 +456,7 @@
 
         <div class="welcome" id="welcome">
             <div class="welcome-emoji">🤖</div>
-            <h2>Welcome to Ragwalla Agent Studio</h2>
+            <h2>Welcome to CityDesk Agent Studio</h2>
             <p>Select an agent above to start chatting</p>
         </div>
     </div>
@@ -618,8 +713,13 @@
                     if (!aiMessage) {
                         aiMessage = createMessage('assistant', '');
                         aiMessage.id = `msg-${data.payload.message_id}`;
+                        // Store raw content as data attribute
+                        aiMessage.dataset.rawContent = '';
                     }
-                    aiMessage.querySelector('.message-content').textContent += data.payload.chunk;
+                    // Accumulate raw content
+                    aiMessage.dataset.rawContent += data.payload.chunk;
+                    // Render accumulated markdown
+                    aiMessage.querySelector('.message-content').innerHTML = marked.parse(aiMessage.dataset.rawContent);
                     scrollToBottom();
                     break;
                     
@@ -665,7 +765,13 @@
             
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
-            contentDiv.textContent = content;
+            
+            // Render markdown for assistant messages, plain text for user messages
+            if (role === 'assistant' && content) {
+                contentDiv.innerHTML = marked.parse(content);
+            } else {
+                contentDiv.textContent = content;
+            }
             
             div.appendChild(contentDiv);
             document.getElementById('messages').appendChild(div);
