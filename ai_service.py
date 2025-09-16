@@ -138,7 +138,8 @@ class AIService:
         message: str, 
         context: List[ChatMessage], 
         agent_data: Dict[str, Any],
-        stream_callback
+        stream_callback,
+        thread_id: Optional[str] = None
     ) -> None:
         """Generate AI response with real-time streaming via callback"""
         try:
@@ -165,7 +166,8 @@ class AIService:
                     "maxTokens": model_settings.get("max_tokens", 2000),
                     "messages": messages
                 },
-                stream_callback=stream_callback
+                stream_callback=stream_callback,
+                thread_id=thread_id
             )
                 
         except Exception as e:
@@ -288,10 +290,15 @@ class AIService:
                                     elif msg_type == "typing":
                                         is_typing = json_data.get("isTyping", False)
                                         logger.info(f"Agent typing: {is_typing}")
+                                    elif msg_type == "thread_info":
+                                        # Log thread info for non-streaming mode
+                                        thread_id = json_data.get("threadId")
+                                        if thread_id:
+                                            logger.info(f"Received thread_info (non-streaming): {thread_id}")
                                     elif json_data.get("error"):
                                         logger.error(f"Agent error: {json_data['error']}")
                                         raise Exception(f"Agent error: {json_data['error']}")
-                                    # Ignore other message types like cf_agent_state, thread_info, etc.
+                                    # Ignore other message types like cf_agent_state, etc.
                                         
                                 except json.JSONDecodeError:
                                     # Handle plain text responses
@@ -333,7 +340,8 @@ class AIService:
         instance_name: str,
         message: str,
         options: Dict[str, Any],
-        stream_callback
+        stream_callback,
+        thread_id: Optional[str] = None
     ) -> None:
         """Call the remote agent's chat method via WebSocket with real-time streaming"""
         
@@ -374,6 +382,11 @@ class AIService:
             "timestamp": timestamp,
             "tabId": tab_id
         }
+        
+        # Include threadId if provided
+        if thread_id:
+            message_payload["threadId"] = thread_id
+            logger.info(f"Including threadId in message: {thread_id}")
         
         logger.info(f"Streaming WebSocket connection to: {ws_url}")
         
@@ -432,6 +445,12 @@ class AIService:
                                     elif msg_type == "typing":
                                         is_typing = json_data.get("isTyping", False)
                                         logger.info(f"Agent typing: {is_typing}")
+                                    elif msg_type == "thread_info":
+                                        # Forward thread info to frontend
+                                        thread_id = json_data.get("threadId")
+                                        if thread_id:
+                                            logger.info(f"Received thread_info: {thread_id}")
+                                            await stream_callback(f"__THREAD_INFO__{thread_id}", is_complete=False)
                                     elif json_data.get("error"):
                                         logger.error(f"Agent error: {json_data.get('error')}")
                                         await stream_callback(f"Error: {json_data.get('error')}", is_complete=True)

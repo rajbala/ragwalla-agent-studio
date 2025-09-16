@@ -249,6 +249,12 @@ async def handle_user_message(websocket: WebSocket, session_id: str, data: Dict,
     """Handle incoming user message"""
     try:
         content = data["payload"]["content"]
+        thread_id = data["payload"].get("threadId")  # Extract threadId if present
+        
+        if thread_id:
+            logger.info(f"Received message with threadId: {thread_id}")
+        else:
+            logger.info("Received message without threadId - will create new thread")
         
         # Save user message
         user_msg = await db.add_message(session_id, "user", content)
@@ -288,6 +294,20 @@ async def handle_user_message(websocket: WebSocket, session_id: str, data: Dict,
             nonlocal ai_message_id, full_response
             
             if chunk:
+                # Check if this is a thread_info message
+                if chunk.startswith("__THREAD_INFO__"):
+                    thread_id = chunk.replace("__THREAD_INFO__", "")
+                    logger.info(f"Forwarding thread_info to frontend: {thread_id}")
+                    
+                    # Send thread_info to frontend
+                    thread_msg = WSMessage(
+                        type="thread_info",
+                        payload={"threadId": thread_id},
+                        timestamp=datetime.now().isoformat()
+                    )
+                    await manager.send_to_session(thread_msg.json(), session_id)
+                    return
+                
                 full_response += chunk
                 
                 # Create message on first chunk
@@ -325,7 +345,7 @@ async def handle_user_message(websocket: WebSocket, session_id: str, data: Dict,
                 await manager.send_to_session(complete.json(), session_id)
         
         # Generate response
-        await ai.generate_response_stream(content, context_messages, agent, stream_callback)
+        await ai.generate_response_stream(content, context_messages, agent, stream_callback, thread_id)
         
     except Exception as e:
         logger.error(f"Error handling message: {e}")

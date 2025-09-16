@@ -465,6 +465,7 @@
         let ws = null;
         let currentSessionId = null;
         let selectedAgentId = null;
+        let currentThreadId = null;  // Store the current thread ID
 
         // Load agents on startup
         async function loadAgents() {
@@ -592,6 +593,7 @@
                 const data = await response.json();
                 if (data.success) {
                     currentSessionId = data.data.session.id;
+                    currentThreadId = null;  // Reset thread ID for new session
                     connectWebSocket(currentSessionId);
                     
                     document.getElementById('welcome').style.display = 'none';
@@ -610,6 +612,7 @@
         // Load existing session
         async function loadSession(sessionId) {
             currentSessionId = sessionId;
+            currentThreadId = null;  // Reset thread ID when switching sessions
             
             // Close existing WebSocket
             if (ws) {
@@ -748,6 +751,14 @@
                     // Re-enable send button on error
                     document.getElementById('sendBtn').disabled = false;
                     break;
+                    
+                case 'thread_info':
+                    // Store the thread ID for future messages
+                    if (data.payload && data.payload.threadId) {
+                        currentThreadId = data.payload.threadId;
+                        console.log('Received thread ID:', currentThreadId);
+                    }
+                    break;
             }
         }
 
@@ -819,10 +830,18 @@
             addMessage('user', content);
             
             // Send via WebSocket
-            ws.send(JSON.stringify({
+            const message = {
                 type: 'user_message',
                 payload: { content }
-            }));
+            };
+            
+            // Include threadId if we have one
+            if (currentThreadId) {
+                message.payload.threadId = currentThreadId;
+                console.log('Sending message with thread ID:', currentThreadId);
+            }
+            
+            ws.send(JSON.stringify(message));
             
             // Clear input
             input.value = '';
