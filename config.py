@@ -45,9 +45,7 @@ class AppConfig:
         
         # Chat Configuration
         self.max_message_length = int(os.getenv("MAX_MESSAGE_LENGTH", "4000"))
-        self.websocket_timeout = int(os.getenv("WEBSOCKET_TIMEOUT", "30"))
-        self.websocket_ping_interval = int(os.getenv("WEBSOCKET_PING_INTERVAL", "20"))
-        self.websocket_ping_timeout = int(os.getenv("WEBSOCKET_PING_TIMEOUT", "10"))
+        # Timeout configurations removed - no timeouts enforced
         self.websocket_max_reconnect_attempts = int(os.getenv("WEBSOCKET_MAX_RECONNECT_ATTEMPTS", "5"))
         self.websocket_reconnect_delay = int(os.getenv("WEBSOCKET_RECONNECT_DELAY", "1000"))  # milliseconds
         
@@ -83,8 +81,7 @@ def get_agent_config() -> Dict[str, Any]:
         "api_key": config.ragwalla_api_key,
         "default_agent_id": config.default_agent_id,
         "default_agent_name": config.default_agent_name,
-        "default_agent_description": config.default_agent_description,
-        "websocket_timeout": config.websocket_timeout
+        "default_agent_description": config.default_agent_description
     }
 
 def get_database_config() -> Dict[str, Any]:

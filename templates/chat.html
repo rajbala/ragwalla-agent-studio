@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CityDesk Agent Studio</title>
+    <title>Ragwalla Agent Studio</title>
     <style>
         * {
             margin: 0;
@@ -29,34 +29,61 @@
 
         .sidebar-header {
             padding: 20px;
-            border-bottom: 1px solid #e0e0e0;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid #f0f0f0;
+            background: #fafafa;
+        }
+
+        .app-title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .app-logo {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .app-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #007AFF;
+            font-size: 17px;
+            font-weight: 700;
+            color: #111827;
+            letter-spacing: -0.2px;
         }
 
         .new-chat-btn {
             width: 100%;
-            padding: 10px;
-            background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
-            color: white;
-            border: none;
+            padding: 12px 16px;
+            background: #f8fafc;
+            color: #111827;
+            border: 1px solid #94a3b8;
             border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 122, 255, 0.2);
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .new-chat-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 122, 255, 0.3);
+            background: #e2e8f0;
+            border-color: #64748b;
+        }
+
+        .new-chat-btn:active {
+            background: #f3f4f6;
+        }
+
+        .new-chat-icon {
+            width: 14px;
+            height: 14px;
         }
 
         .sessions-list {
@@ -71,6 +98,25 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .session-item .chat-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+
+        .session-item.active .chat-icon {
+            opacity: 1;
+        }
+
+        .session-content {
+            flex: 1;
+            min-width: 0;
         }
 
         .session-item:hover {
@@ -180,6 +226,33 @@
             display: flex;
             align-items: flex-start;
             gap: 12px;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .message.assistant .message-avatar {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+        }
+
+        .message.assistant .bot-icon {
+            width: 20px;
+            height: 20px;
         }
 
         .message.user {
@@ -356,26 +429,37 @@
         }
 
         .send-btn {
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
+            padding: 10px 12px;
+            background: #3b82f6;
             color: white;
             border: none;
-            border-radius: 20px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 122, 255, 0.2);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
         }
 
         .send-btn:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 122, 255, 0.3);
+            background: #2563eb;
+        }
+
+        .send-btn:active:not(:disabled) {
+            background: #1d4ed8;
         }
 
         .send-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .send-icon {
+            width: 16px;
+            height: 16px;
         }
 
         /* Welcome Screen */
@@ -388,6 +472,14 @@
             padding: 40px;
             text-align: center;
             background: linear-gradient(135deg, #667eea08 0%, #764ba208 100%);
+        }
+
+        .welcome-bot-icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+            animation: bounce 2s infinite;
         }
 
         .welcome h2 {
@@ -421,8 +513,20 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-header">
-            <div class="app-title">CityDesk Agent Studio</div>
-            <button class="new-chat-btn" id="newChatBtn" onclick="createNewSession()" style="display: none;">+ New Chat</button>
+            <div class="app-title-container">
+                <div class="app-logo">
+                    <svg class="bot-icon" xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="#374151">
+                        <path d="M160-360q-50 0-85-35t-35-85q0-50 35-85t85-35v-80q0-33 23.5-56.5T240-760h120q0-50 35-85t85-35q50 0 85 35t35 85h120q33 0 56.5 23.5T800-680v80q50 0 85 35t35 85q0 50-35 85t-85 35v160q0 33-23.5 56.5T720-120H240q-33 0-56.5-23.5T160-200v-160Zm200-80q25 0 42.5-17.5T420-500q0-25-17.5-42.5T360-560q-25 0-42.5 17.5T300-500q0 25 17.5 42.5T360-440Zm240 0q25 0 42.5-17.5T660-500q0-25-17.5-42.5T600-560q-25 0-42.5 17.5T540-500q0 25 17.5 42.5T600-440ZM320-280h320v-80H320v80Zm-80 80h480v-480H240v480Zm240-240Z"/>
+                    </svg>
+                </div>
+                <div class="app-title">Ragwalla Agent Studio</div>
+            </div>
+            <button class="new-chat-btn" id="newChatBtn" onclick="createNewSession()" style="display: none;">
+                <svg class="new-chat-icon" xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="#374151">
+                    <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+                </svg>
+                New Chat
+            </button>
         </div>
         <div class="sessions-list" id="sessionsList" style="display: none;"></div>
         <div class="no-agent-message" id="noAgentMessage" style="padding: 20px; text-align: center; color: #666; font-size: 14px;">
@@ -449,14 +553,20 @@
                              placeholder="Type a message..." 
                              rows="1"
                              onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
-                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+                        <svg class="send-icon" xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="currentColor">
+                            <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
 
         <div class="welcome" id="welcome">
-            <div class="welcome-emoji">🤖</div>
-            <h2>Welcome to CityDesk Agent Studio</h2>
+            <svg class="welcome-bot-icon" xmlns="http://www.w3.org/2000/svg" height="64px" viewBox="0 -960 960 960" width="64px" fill="#5985E1">
+                <path d="M160-360q-50 0-85-35t-35-85q0-50 35-85t85-35v-80q0-33 23.5-56.5T240-760h120q0-50 35-85t85-35q50 0 85 35t35 85h120q33 0 56.5 23.5T800-680v80q50 0 85 35t35 85q0 50-35 85t-85 35v160q0 33-23.5 56.5T720-120H240q-33 0-56.5-23.5T160-200v-160Zm200-80q25 0 42.5-17.5T420-500q0-25-17.5-42.5T360-560q-25 0-42.5 17.5T300-500q0 25 17.5 42.5T360-440Zm240 0q25 0 42.5-17.5T660-500q0-25-17.5-42.5T600-560q-25 0-42.5 17.5T540-500q0 25 17.5 42.5T600-440ZM320-280h320v-80H320v80Zm-80 80h480v-480H240v480Zm240-240Z"/>
+            </svg>
+            <h2>Welcome to Ragwalla Agent Studio</h2>
             <p>Select an agent above to start chatting</p>
         </div>
     </div>
@@ -513,6 +623,18 @@
                             div.className = 'session-item';
                             div.onclick = () => loadSession(session.id);
                             
+                            // Add chat icon
+                            const iconDiv = document.createElement('div');
+                            iconDiv.innerHTML = `
+                                <svg class="chat-icon" xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="#5985E1">
+                                    <path d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/>
+                                </svg>
+                            `;
+                            
+                            // Create content container
+                            const contentDiv = document.createElement('div');
+                            contentDiv.className = 'session-content';
+                            
                             const preview = document.createElement('div');
                             preview.className = 'session-preview';
                             preview.textContent = session.preview || 'New chat';
@@ -521,8 +643,11 @@
                             time.className = 'session-time';
                             time.textContent = new Date(session.updated_at).toLocaleString();
                             
-                            div.appendChild(preview);
-                            div.appendChild(time);
+                            contentDiv.appendChild(preview);
+                            contentDiv.appendChild(time);
+                            
+                            div.appendChild(iconDiv);
+                            div.appendChild(contentDiv);
                             list.appendChild(div);
                             
                             if (session.id === currentSessionId) {
@@ -718,6 +843,8 @@
                         aiMessage.id = `msg-${data.payload.message_id}`;
                         // Store raw content as data attribute
                         aiMessage.dataset.rawContent = '';
+                        // Append to messages container
+                        document.getElementById('messages').appendChild(aiMessage);
                     }
                     // Accumulate raw content
                     aiMessage.dataset.rawContent += data.payload.chunk;
@@ -774,6 +901,22 @@
             const div = document.createElement('div');
             div.className = `message ${role}`;
             
+            // Create avatar
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            
+            if (role === 'assistant') {
+                // Use bot SVG for assistant messages
+                avatarDiv.innerHTML = `
+                    <svg class="bot-icon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="#5985E1">
+                        <path d="M160-360q-50 0-85-35t-35-85q0-50 35-85t85-35v-80q0-33 23.5-56.5T240-760h120q0-50 35-85t85-35q50 0 85 35t35 85h120q33 0 56.5 23.5T800-680v80q50 0 85 35t35 85q0 50-35 85t-85 35v160q0 33-23.5 56.5T720-120H240q-33 0-56.5-23.5T160-200v-160Zm200-80q25 0 42.5-17.5T420-500q0-25-17.5-42.5T360-560q-25 0-42.5 17.5T300-500q0 25 17.5 42.5T360-440Zm240 0q25 0 42.5-17.5T660-500q0-25-17.5-42.5T600-560q-25 0-42.5 17.5T540-500q0 25 17.5 42.5T600-440ZM320-280h320v-80H320v80Zm-80 80h480v-480H240v480Zm240-240Z"/>
+                    </svg>
+                `;
+            } else {
+                // Use "U" for user messages
+                avatarDiv.textContent = 'U';
+            }
+            
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
             
@@ -784,8 +927,8 @@
                 contentDiv.textContent = content;
             }
             
+            div.appendChild(avatarDiv);
             div.appendChild(contentDiv);
-            document.getElementById('messages').appendChild(div);
             
             return div;
         }

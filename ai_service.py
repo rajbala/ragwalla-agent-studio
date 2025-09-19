@@ -71,7 +71,7 @@ class AIService:
                 token_url,
                 json=payload,
                 headers=self._get_auth_headers(),
-                timeout=aiohttp.ClientTimeout(total=10)
+                timeout=None
             ) as response:
                 
                 logger.info(f"WebSocket token response status: {response.status}")
@@ -90,8 +90,8 @@ class AIService:
                         return self.api_token
                     raise Exception(f"Failed to get WebSocket token: {response.status}")
                     
-        except asyncio.TimeoutError:
-            logger.error("Timeout getting WebSocket token, falling back to API key")
+        except Exception as e:
+            logger.error(f"Error getting WebSocket token, falling back to API key: {e}")
             return self.api_token
         except Exception as e:
             logger.error(f"Error getting WebSocket token: {e}, falling back to API key")
@@ -245,7 +245,7 @@ class AIService:
             async with session.ws_connect(
                 ws_url,
                 headers=headers,
-                timeout=aiohttp.ClientTimeout(total=15)
+                timeout=None
             ) as ws:
                 logger.info("✅ WebSocket connection established!")
                 
@@ -259,7 +259,7 @@ class AIService:
                 
                 # Collect response chunks
                 response_parts = []
-                timeout_seconds = 30  # Increase timeout for agent processing
+                # No timeout enforcement - allow unlimited processing time
                 
                 try:
                     # Use asyncio.wait_for for Python 3.10 compatibility
@@ -311,10 +311,10 @@ class AIService:
                                 logger.info("WebSocket connection closed")
                                 return
                     
-                    await asyncio.wait_for(collect_messages(), timeout=timeout_seconds)
-                                
-                except asyncio.TimeoutError:
-                    logger.info(f"WebSocket response timeout after {timeout_seconds}s")
+                    await collect_messages()
+                
+                except Exception as e:
+                    logger.info(f"WebSocket response completed or interrupted: {e}")
                 
                 # Combine response parts
                 full_response = "".join(response_parts).strip()
@@ -325,9 +325,9 @@ class AIService:
                     return "WebSocket connection successful, but no response received."
 
                     
-        except asyncio.TimeoutError:
-            logger.error("Timeout connecting to agent WebSocket")
-            return "Request timed out. Please try again."
+        except Exception as e:
+            logger.error(f"Error connecting to agent WebSocket: {e}")
+            return "Unable to connect to AI agent. Please check your connection."
         except aiohttp.ClientError as e:
             logger.error(f"WebSocket client error: {e}")
             return "Unable to connect to AI agent. Please try again."
@@ -405,7 +405,7 @@ class AIService:
             async with session.ws_connect(
                 ws_url,
                 headers=headers,
-                timeout=aiohttp.ClientTimeout(total=15)
+                timeout=None
             ) as ws:
                 logger.info("✅ Streaming WebSocket connection established!")
                 
@@ -418,7 +418,7 @@ class AIService:
                 logger.info("Chat message sent for streaming")
                 
                 # Stream response chunks in real-time
-                timeout_seconds = 30
+                # No timeout enforcement - allow unlimited streaming time
                 
                 try:
                     async def stream_messages():
@@ -466,12 +466,12 @@ class AIService:
                                 await stream_callback("", is_complete=True)
                                 return
                     
-                    # Use asyncio.wait_for for timeout (Python 3.10 compatibility)
-                    await asyncio.wait_for(stream_messages(), timeout=timeout_seconds)
+                    # No timeout enforcement - allow unlimited streaming time
+                    await stream_messages()
                     
-                except asyncio.TimeoutError:
-                    logger.warning(f"WebSocket streaming timeout after {timeout_seconds} seconds")
-                    await stream_callback("Response timeout. Please try again.", is_complete=True)
+                except Exception as e:
+                    logger.warning(f"WebSocket streaming completed or interrupted: {e}")
+                    # Don't send timeout message - let natural completion occur
                 except Exception as e:
                     logger.error(f"Error during streaming: {e}")
                     await stream_callback("An error occurred during streaming.", is_complete=True)
@@ -577,7 +577,7 @@ class AIService:
                     "Content-Type": "application/json",
                     "User-Agent": "Ragwalla-Agent-Studio/1.0"
                 },
-                timeout=aiohttp.ClientTimeout(total=60)
+                timeout=None
             ) as response:
                 
                 if response.status == 200:
@@ -607,7 +607,7 @@ class AIService:
             async with session.get(
                 url,
                 headers={"User-Agent": "Salvador-Agent/1.0"},
-                timeout=aiohttp.ClientTimeout(total=10)
+                timeout=None
             ) as response:
                 
                 if response.status == 200:
@@ -681,7 +681,7 @@ class AIService:
                     "Content-Type": "application/json",
                     "User-Agent": "Ragwalla-Agent-Studio/1.0"
                 },
-                timeout=aiohttp.ClientTimeout(total=5)
+                timeout=None
             ) as response:
                 return response.status == 200
         except Exception as e:
